@@ -1,0 +1,7 @@
+node_modules/
+.omc/
+.env
+*.log
+*.err
+*.lock
+package-lock.json

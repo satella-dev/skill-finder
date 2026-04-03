@@ -1,0 +1,13 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "timblo-skills",
+  "description": "Timblo 사내 Claude Code 스킬 레지스트리",
+  "plugins": [
+    {
+      "name": "skill-registry",
+      "description": "스킬/에이전트 검색 및 설치 도구 (PostgreSQL + pgvector 하이브리드 검색, 5,214개 스킬, 277개 리포)",
+      "source": "./",
+      "category": "development"
+    }
+  ]
+}
