@@ -1,99 +1,30 @@
 ---
 name: skill-installer
-description: "Search, filter, and install Claude Code skills/agents via MCP (5,214 entries, 277 repos). Use when: 'install skill', 'find and install', 'add skill for X', 'setup skills for agent'. Combines search → refine → approve → install."
+description: "Search and install Claude Code skills/agents from a registry of 5,214 entries. Use when: 'install skill', 'find and install', 'add skill for X', 'setup skills for agent'."
 ---
 
 # Skill Installer
 
-Search, filter, approve, and install skills/agents via the `skill-registry` MCP server.
+스킬을 검색하고 설치합니다. 검색 → 필터 → 승인 → 설치.
 
-## Prerequisites
+## 사용법
 
-The `skill-registry` MCP server must be configured. Run:
-
-```bash
-claude mcp add --transport sse skill-registry https://skills.timblo.io/sse --scope user
-```
-
-Then restart Claude Code. Verify with `/mcp` — `skill-registry` should show as connected.
-
-## Workflow
-
-### Phase 1: Search
-
-Use the MCP tools to find skills:
-
-```
-mcp__skill-registry__hybrid_search({ query: "사용자 요청 내용", limit: 10 })
-```
-
-Or for fast keyword search:
-
-```
-mcp__skill-registry__search_skills({ query: "keyword", limit: 10 })
-```
-
-Present results grouped by grade (A → B → ungraded).
-
-### Phase 2: Refine
-
-If the user wants to narrow results, search again with modified query:
-- "A등급만" → add "grade A" to context
-- "에이전트만" → filter results where skill_type = "agent"
-- "특정 도메인" → use `mcp__skill-registry__list_domains()` to show options
-
-### Phase 3: Approve
-
-Present final selection as a numbered list:
-- Name, grade, repo, skill/agent type
-- GitHub URL for each repo
-
-Ask user to confirm by number.
-
-### Phase 4: Install
-
-For each approved skill, install from GitHub:
+1. 검색: `mcp__skill-registry__hybrid_search({ query: "검색어", limit: 10 })`
+2. 사용자가 선택
+3. 설치:
 
 ```bash
-# Clone the repo
 TEMP=$(mktemp -d)
 git clone --depth 1 https://github.com/{owner}/{repo}.git "$TEMP/repo"
-
-# Detect and copy available components
 [ -d "$TEMP/repo/skills" ] && cp -r "$TEMP/repo/skills/"* ~/.claude/skills/
 [ -d "$TEMP/repo/agents" ] && cp -r "$TEMP/repo/agents/"* ~/.claude/agents/
-[ -d "$TEMP/repo/commands" ] && cp -r "$TEMP/repo/commands/"* ~/.claude/commands/
-
-# Cleanup
 rm -rf "$TEMP"
 ```
 
-Ask user for scope before installing:
-- **Global** (`~/.claude/`): Available in all projects
-- **Project** (`.claude/`): Available in current project only
+글로벌(`~/.claude/`) 또는 프로젝트(`.claude/`) 중 사용자에게 확인.
 
-### Phase 5: Verify
-
-After install, check files exist:
+## 설치 (MCP 서버 연결)
 
 ```bash
-ls ~/.claude/skills/{skill-name}/SKILL.md && echo "Installed" || echo "Failed"
-```
-
-Report: "설치 완료: N개 스킬. 즉시 사용 가능."
-
-## Check Alternatives
-
-When user asks about competing options:
-
-```
-mcp__skill-registry__get_alternatives({ domain: "security" })
-```
-
-## Agent Creation Support
-
-When creating a new agent, get recommended skills:
-
-```
-mcp__skill-registry__get_role_template({ role: "security-auditor" })
+claude mcp add --transport sse skill-registry https://skills.timblo.io/sse --scope user
 ```
