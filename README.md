@@ -12,8 +12,8 @@ Add to `~/.claude/mcp.json`:
 {
   "mcpServers": {
     "skill-registry": {
-      "type": "sse",
-      "url": "https://skills.timblo.io/sse"
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://skills.timblo.io/sse"]
     }
   }
 }
