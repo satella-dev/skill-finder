@@ -2,15 +2,9 @@
 
 Search and install Claude Code skills/agents from a curated registry of **5,214 skills** across **277 repositories**.
 
-## What it does
+## Setup (2 steps)
 
-- **skill-finder**: Search skills by keyword, domain, or role. Supports Korean and English.
-- **skill-installer**: Search, filter, approve, and install skills in one flow.
-- **MCP Server**: Remote hybrid search (keyword + vector similarity) via `skills.timblo.io`.
-
-## Quick Start
-
-### Option 1: MCP Server (recommended)
+### Step 1: Connect to the MCP server
 
 Add to `~/.claude/.mcp.json`:
 
@@ -25,18 +19,9 @@ Add to `~/.claude/.mcp.json`:
 }
 ```
 
-Restart Claude Code. You get 6 tools:
+### Step 2: Install the skills (choose one)
 
-| Tool | Description |
-|------|-------------|
-| `search_skills` | Keyword search with domain inference (fast) |
-| `hybrid_search` | Keyword + vector similarity search (accurate, Korean supported) |
-| `list_domains` | List all 13 skill domains |
-| `get_alternatives` | Compare alternatives for a domain |
-| `get_role_template` | Get recommended skills for an agent role |
-| `get_stats` | Registry statistics |
-
-### Option 2: Plugin
+**Plugin (recommended):**
 
 Add to `~/.claude/settings.json`:
 
@@ -56,7 +41,7 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-### Option 3: Manual
+**Or manual:**
 
 ```bash
 git clone https://github.com/satella-dev/skill-finder.git
@@ -64,24 +49,50 @@ cp -r skill-finder/skills/skill-finder ~/.claude/skills/
 cp -r skill-finder/skills/skill-installer ~/.claude/skills/
 ```
 
-## Usage
+**Restart Claude Code** after setup.
 
-### Search skills
+## Verify
+
+After restart, type:
 
 ```
-/skill-finder security audit agent skills
+/skill-finder security audit
+```
+
+You should see search results from the registry. If you see "MCP tool not available", check that Step 1 is configured correctly.
+
+## What you get
+
+### Skills (slash commands)
+
+| Skill | Usage |
+|-------|-------|
+| `/skill-finder` | Search skills by keyword, domain, or role |
+| `/skill-installer` | Search → filter → approve → install in one flow |
+
+### MCP Tools (auto-available)
+
+| Tool | Description |
+|------|-------------|
+| `search_skills` | Fast keyword search with domain inference |
+| `hybrid_search` | Keyword + vector similarity (most accurate, Korean supported) |
+| `list_domains` | Show all 13 domains with skill counts |
+| `get_alternatives` | Compare competing skills for a domain |
+| `get_role_template` | Get recommended skills for an agent role |
+| `get_stats` | Registry statistics |
+
+## Usage Examples
+
+```
+/skill-finder security audit agent
 /skill-finder TDD 관련 스킬 추천해줘
 /skill-finder what skills exist for iOS development
-```
 
-### Install skills
-
-```
 /skill-installer install security skills
 /skill-installer Django 개발용 스킬 설치
 ```
 
-## Domains
+## Searchable Domains
 
 | Domain | Skills |
 |--------|--------|
@@ -99,7 +110,7 @@ cp -r skill-finder/skills/skill-installer ~/.claude/skills/
 | Frontend & Design | 51 |
 | Automation | 10 |
 
-## Search Accuracy
+## Accuracy
 
 Tested with 100 diverse queries (English + Korean):
 
@@ -108,7 +119,7 @@ Tested with 100 diverse queries (English + Korean):
 | Top-3 accuracy | **95%** |
 | Top-1 accuracy | 85% |
 
-Powered by PostgreSQL + pg_trgm + pgvector (OpenAI text-embedding-3-small).
+Powered by PostgreSQL + pg_trgm + pgvector.
 
 ## License
 

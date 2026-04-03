@@ -1,7 +1,97 @@
 ---
 name: skill-finder
-description: "Use when creating a new agent, looking for relevant skills, or asking 'what skills exist for X'. Searches the skill-agent registry to recommend skills by domain, role, or keyword. Trigger phrases: 'find skills for', 'recommend skills', 'what skills exist', 'skill for agent', 'match skills'."
+description: "Search Claude Code skills/agents from a registry of 5,214 entries across 277 repos via MCP. Use when: 'find skills for', 'recommend skills', 'what skills exist for X', 'skill for agent'. Supports Korean and English."
 ---
+
+# Skill Finder
+
+Search the skill registry via the `skill-registry` MCP server.
+
+## Prerequisites
+
+The `skill-registry` MCP server must be configured. Add to `~/.claude/.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "skill-registry": {
+      "type": "sse",
+      "url": "https://skills.timblo.io/sse"
+    }
+  }
+}
+```
+
+Then restart Claude Code.
+
+## Search Process
+
+### Step 1: Choose the right MCP tool
+
+| MCP Tool | When to use |
+|----------|-------------|
+| `mcp__skill-registry__search_skills` | Fast keyword search. Use for exact names, technologies. |
+| `mcp__skill-registry__hybrid_search` | Most accurate. Understands meaning, handles Korean. Use for vague or conceptual queries. |
+
+### Step 2: Run the search
+
+For keyword search:
+```
+mcp__skill-registry__search_skills({ query: "security audit", limit: 10 })
+```
+
+For accurate hybrid search (recommended):
+```
+mcp__skill-registry__hybrid_search({ query: "보안 감사 에이전트를 위한 스킬", limit: 10 })
+```
+
+### Step 3: Present results
+
+Group by grade:
+- **A/A-**: Strongly recommended (production-quality)
+- **B+/B**: Consider (useful)
+- **Ungraded**: Other
+
+### Step 4: Check alternatives (optional)
+
+```
+mcp__skill-registry__get_alternatives({ domain: "security" })
+```
+
+Domains: code-review, security, tdd-testing, design-ui, architecture, marketing
+
+### Step 5: Agent role template (when creating agents)
+
+```
+mcp__skill-registry__get_role_template({ role: "security-auditor" })
+```
+
+Roles: code-reviewer, security-auditor, frontend-developer, devops-engineer, data-scientist, pm-product, mobile-developer, marketer, legal-advisor, music-producer
+
+## Other Tools
+
+```
+mcp__skill-registry__list_domains()    — 13 domains with skill counts
+mcp__skill-registry__get_stats()       — total repos, skills, agents
+```
+
+## Domains
+
+| Domain | Skills |
+|--------|--------|
+| Platform/Tools | 1,873 |
+| Security | 884 |
+| Dev Workflow | 717 |
+| PM/Business | 662 |
+| AI/ML/Data | 575 |
+| Marketing | 130 |
+| DevOps | 73 |
+| Languages | 67 |
+| Health/Science | 60 |
+| Creative | 58 |
+| Mobile | 54 |
+| Frontend | 51 |
+| Automation | 10 |
 
 # Skill Finder
 
