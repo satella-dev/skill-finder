@@ -2,26 +2,21 @@
 
 Search and install Claude Code skills/agents from a curated registry of **5,214 skills** across **277 repositories**.
 
-## Setup (2 steps)
+## Setup
 
 ### Step 1: Connect to the MCP server
 
-Add to `~/.claude/mcp.json`:
+Run in your terminal:
 
-```json
-{
-  "mcpServers": {
-    "skill-registry": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://skills.timblo.io/sse"]
-    }
-  }
-}
+```bash
+claude mcp add --transport sse skill-registry https://skills.timblo.io/sse --scope user
 ```
 
-### Step 2: Install the skills (choose one)
+This registers the server globally. Restart Claude Code.
 
-**Plugin (recommended):**
+### Step 2 (optional): Install skills for slash commands
+
+**Plugin:**
 
 Add to `~/.claude/settings.json`:
 
@@ -51,15 +46,15 @@ cp -r skill-finder/skills/skill-installer ~/.claude/skills/
 
 **Restart Claude Code** after setup.
 
-## Verify
+### Verify
 
-After restart, type:
+After restart, run `/mcp` and check that `skill-registry` shows as connected. Then:
 
 ```
-/skill-finder security audit
+보안 관련 스킬 찾아줘
 ```
 
-You should see search results from the registry. If you see "MCP tool not available", check that Step 1 is configured correctly.
+Should return search results from 5,214 skills across 277 repos.
 
 ## What you get
 

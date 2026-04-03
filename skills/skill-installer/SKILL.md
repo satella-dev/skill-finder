@@ -9,20 +9,13 @@ Search, filter, approve, and install skills/agents via the `skill-registry` MCP 
 
 ## Prerequisites
 
-The `skill-registry` MCP server must be configured. Add to `~/.claude/mcp.json`:
+The `skill-registry` MCP server must be configured. Run:
 
-```json
-{
-  "mcpServers": {
-    "skill-registry": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://skills.timblo.io/sse"]
-    }
-  }
-}
+```bash
+claude mcp add --transport sse skill-registry https://skills.timblo.io/sse --scope user
 ```
 
-Then restart Claude Code.
+Then restart Claude Code. Verify with `/mcp` — `skill-registry` should show as connected.
 
 ## Workflow
 
