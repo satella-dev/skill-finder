@@ -9,7 +9,7 @@ Search the skill registry via the `skill-registry` MCP server.
 
 ## Prerequisites
 
-The `skill-registry` MCP server must be configured. Add to `~/.claude/.mcp.json`:
+The `skill-registry` MCP server must be configured. Add to `~/.claude/mcp.json`:
 
 ```json
 {

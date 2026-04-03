@@ -6,7 +6,7 @@ Search and install Claude Code skills/agents from a curated registry of **5,214 
 
 ### Step 1: Connect to the MCP server
 
-Add to `~/.claude/.mcp.json`:
+Add to `~/.claude/mcp.json`:
 
 ```json
 {
