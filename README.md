@@ -1,22 +1,20 @@
 # Skill Finder
 
-Search and install Claude Code skills/agents from a curated registry of **5,214 skills** across **277 repositories**.
+A Claude Code plugin that searches and installs skills/agents from a curated registry of **5,214 skills** across **277 repositories** and **13 domains**.
+
+Powered by PostgreSQL + pgvector hybrid search (keyword + vector similarity). Accuracy: 95% (Top-3, 100 test queries).
 
 ## Setup
 
-### Step 1: Connect to the MCP server
-
-Run in your terminal:
+### 1. Connect the MCP server
 
 ```bash
 claude mcp add --transport sse skill-registry https://skills.timblo.io/sse --scope user
 ```
 
-This registers the server globally. Restart Claude Code.
+Restart Claude Code. Verify: run `/mcp` and confirm `skill-registry` is connected.
 
-### Step 2 (optional): Install skills for slash commands
-
-**Plugin:**
+### 2. Install the plugin (optional — adds `/skill-finder` and `/skill-installer` slash commands)
 
 Add to `~/.claude/settings.json`:
 
@@ -36,7 +34,7 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-**Or manual:**
+Or install manually:
 
 ```bash
 git clone https://github.com/satella-dev/skill-finder.git
@@ -44,77 +42,66 @@ cp -r skill-finder/skills/skill-finder ~/.claude/skills/
 cp -r skill-finder/skills/skill-installer ~/.claude/skills/
 ```
 
-**Restart Claude Code** after setup.
+Restart Claude Code after setup.
 
-### Verify
+## What You Get
 
-After restart, run `/mcp` and check that `skill-registry` shows as connected. Then:
-
-```
-보안 관련 스킬 찾아줘
-```
-
-Should return search results from 5,214 skills across 277 repos.
-
-## What you get
-
-### Skills (slash commands)
-
-| Skill | Usage |
-|-------|-------|
-| `/skill-finder` | Search skills by keyword, domain, or role |
-| `/skill-installer` | Search → filter → approve → install in one flow |
-
-### MCP Tools (auto-available)
+### MCP Tools (available after Step 1)
 
 | Tool | Description |
 |------|-------------|
-| `search_skills` | Fast keyword search with domain inference |
-| `hybrid_search` | Keyword + vector similarity (most accurate, Korean supported) |
-| `list_domains` | Show all 13 domains with skill counts |
-| `get_alternatives` | Compare competing skills for a domain |
-| `get_role_template` | Get recommended skills for an agent role |
-| `get_stats` | Registry statistics |
+| `search_skills(query, limit)` | Fast keyword search with domain inference and typo tolerance |
+| `hybrid_search(query, limit)` | Keyword + vector similarity search — most accurate, Korean supported |
+| `list_domains()` | List all 13 skill domains with skill counts |
+| `get_alternatives(domain)` | Compare competing skills for a domain (security, code-review, tdd-testing, design-ui, architecture, marketing) |
+| `get_role_template(role)` | Get recommended skill set for an agent role (code-reviewer, security-auditor, frontend-developer, devops-engineer, data-scientist, pm-product, mobile-developer, marketer, legal-advisor, music-producer) |
+| `get_stats()` | Total repos, skills, and agents in the registry |
+| `get_search_analytics(days)` | Search log analytics — top queries, tool usage, response times |
+
+### Skills (available after Step 2)
+
+| Skill | Trigger | What it does |
+|-------|---------|--------------|
+| `/skill-finder` | "find skills for X", "recommend skills", "what skills exist for X" | Searches the registry, groups results by grade, suggests alternatives, supports agent creation |
+| `/skill-installer` | "install skill for X", "add skills for this project" | Searches → user selects → installs to global or project scope |
 
 ## Usage Examples
 
 ```
-/skill-finder security audit agent
-/skill-finder TDD 관련 스킬 추천해줘
-/skill-finder what skills exist for iOS development
-
-/skill-installer install security skills
-/skill-installer Django 개발용 스킬 설치
+find me security audit skills
+recommend skills for a TDD workflow
+what skills exist for iOS development
+install frontend design skills for this project
 ```
 
-## Searchable Domains
+Korean queries work with `hybrid_search`:
 
-| Domain | Skills |
-|--------|--------|
-| Platform & Tools | 1,873 |
-| Security | 884 |
-| Dev Workflow | 717 |
-| PM & Business | 662 |
-| AI / ML / Data | 575 |
-| Marketing & Content | 130 |
-| DevOps & Infra | 73 |
-| Language-Specific | 67 |
-| Health & Science | 60 |
-| Creative | 58 |
-| Mobile | 54 |
-| Frontend & Design | 51 |
-| Automation | 10 |
+```
+보안 관련 스킬 찾아줘
+Flutter 앱 개발에 필요한 스킬 추천해줘
+```
 
-## Accuracy
+## Domains
 
-Tested with 100 diverse queries (English + Korean):
+| Domain | Skills | Examples |
+|--------|--------|---------|
+| Platform & Tools | 1,873 | Claude Code extensions, orchestration, plugins |
+| Security | 884 | OWASP, MITRE ATT&CK, pen testing, compliance |
+| Dev Workflow | 717 | Code review, TDD, git, CI/CD |
+| PM & Business | 662 | PRD, roadmap, legal, finance |
+| AI / ML / Data | 575 | Training, RAG, research, scientific computing |
+| Marketing & Content | 130 | SEO, email, CRO, copywriting |
+| DevOps & Infra | 73 | Terraform, AWS, Docker, Kubernetes |
+| Language-Specific | 67 | Rust, Go, Python, TypeScript, Ruby |
+| Health & Science | 60 | Clinical, materials, bioinformatics |
+| Creative | 58 | Music production, writing, video |
+| Mobile | 54 | iOS, Android, Flutter, React Native |
+| Frontend & Design | 51 | UI/UX, design systems, Tailwind |
+| Automation | 10 | n8n, Home Assistant |
 
-| Metric | Score |
-|--------|-------|
-| Top-3 accuracy | **95%** |
-| Top-1 accuracy | 85% |
+## Project Context
 
-Powered by PostgreSQL + pg_trgm + pgvector.
+When `/skill-finder` runs for the first time in a project, it scans the project structure (package.json, requirements.txt, etc.) and generates `.skill-context.json`. Subsequent searches use this context to prioritize relevant results.
 
 ## License
 
