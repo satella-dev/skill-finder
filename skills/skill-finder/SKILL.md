@@ -1,11 +1,11 @@
 ---
 name: skill-finder
-description: "Search Claude Code skills/agents from a registry of 5,214 entries across 277 repos via MCP. Use when: 'find skills for', 'recommend skills', 'what skills exist for X', 'skill for agent'. Supports Korean and English."
+description: "Search Claude Code skills/agents from a registry of 5,214 entries across 277 repos via MCP. Use when: 'find skills for', 'recommend skills', 'what skills exist for X', 'skill for agent'. Supports Korean and English. Auto-detects project tech stack."
 ---
 
 # Skill Finder
 
-Search the skill registry via the `skill-registry` MCP server.
+Search the skill registry via the `skill-registry` MCP server, with automatic project context detection.
 
 ## Prerequisites
 
@@ -19,33 +19,81 @@ Then restart Claude Code. Verify with `/mcp` — `skill-registry` should show as
 
 ## Search Process
 
-### Step 1: Choose the right MCP tool
+### Step 0: Project Context (automatic, silent)
+
+Before searching, check if `.skill-context.json` exists in the project root.
+
+**If it exists:** Read it and use the detected tech stack to boost relevant results.
+
+**If it does NOT exist:** Automatically detect the project's tech stack by scanning files. This is silent — the user should not see this step, only the search results.
+
+Detection method — use Glob to check which files exist, then build context:
+
+| File | Detected |
+|------|----------|
+| `package.json` | Read `dependencies` + `devDependencies` keys → frameworks (react, next, vue, express, fastify, etc.) |
+| `requirements.txt` / `pyproject.toml` | Python + frameworks (django, fastapi, flask, etc.) |
+| `Cargo.toml` | Rust |
+| `go.mod` | Go |
+| `pubspec.yaml` | Flutter/Dart |
+| `Package.swift` / `*.xcodeproj` | Swift/iOS |
+| `build.gradle*` | Kotlin/Java/Android |
+| `Dockerfile` / `docker-compose*` | Docker |
+| `*.tf` | Terraform |
+| `.github/workflows/*` | GitHub Actions |
+| `CLAUDE.md` / `AGENTS.md` | Existing Claude Code project |
+
+After detection, write `.skill-context.json`:
+
+```json
+{
+  "generated": "2026-04-03",
+  "languages": ["typescript", "python"],
+  "frameworks": ["nextjs", "fastapi"],
+  "databases": ["postgresql"],
+  "tools": ["docker", "github-actions"],
+  "domain_hint": "FRONTEND_DESIGN"
+}
+```
+
+Add `.skill-context.json` to `.gitignore` if not already there.
+
+### Step 1: Build search query
+
+Combine the user's request with project context:
+
+- User asks: "보안 스킬 추천해줘"
+- Project context: `{ frameworks: ["nextjs", "fastapi"] }`
+- Enhanced query: "security skills for nextjs fastapi web application"
+
+This gives hybrid_search better context for vector matching.
+
+### Step 2: Choose the right MCP tool
 
 | MCP Tool | When to use |
 |----------|-------------|
-| `mcp__skill-registry__search_skills` | Fast keyword search. Use for exact names, technologies. |
-| `mcp__skill-registry__hybrid_search` | Most accurate. Understands meaning, handles Korean. Use for vague or conceptual queries. |
+| `mcp__skill-registry__hybrid_search` | **Default.** Most accurate. Understands meaning, handles Korean. |
+| `mcp__skill-registry__search_skills` | Fallback if hybrid_search is unavailable. Fast keyword search. |
 
-### Step 2: Run the search
+### Step 3: Run the search
 
-For keyword search:
 ```
-mcp__skill-registry__search_skills({ query: "security audit", limit: 10 })
-```
-
-For accurate hybrid search (recommended):
-```
-mcp__skill-registry__hybrid_search({ query: "보안 감사 에이전트를 위한 스킬", limit: 10 })
+mcp__skill-registry__hybrid_search({ query: "enhanced query here", limit: 10 })
 ```
 
-### Step 3: Present results
+### Step 4: Present results
 
 Group by grade:
-- **A/A-**: Strongly recommended (production-quality)
-- **B+/B**: Consider (useful)
-- **Ungraded**: Other
+- **Strongly Recommended (A/A-)**: Production-quality, well-maintained
+- **Consider (B+/B)**: Useful, less tested
+- **Other**: Ungraded
 
-### Step 4: Check alternatives (optional)
+For each result show: name, type (skill/agent), repo, grade, score, description.
+
+If the project context detected specific frameworks, highlight results that match:
+> "이 프로젝트는 Next.js + FastAPI를 사용 중이므로, frontend-patterns와 django-security 스킬이 특히 유용합니다."
+
+### Step 5: Check alternatives (when relevant)
 
 ```
 mcp__skill-registry__get_alternatives({ domain: "security" })
@@ -53,7 +101,7 @@ mcp__skill-registry__get_alternatives({ domain: "security" })
 
 Domains: code-review, security, tdd-testing, design-ui, architecture, marketing
 
-### Step 5: Agent role template (when creating agents)
+### Step 6: Agent role template (when creating agents)
 
 ```
 mcp__skill-registry__get_role_template({ role: "security-auditor" })
@@ -85,103 +133,3 @@ mcp__skill-registry__get_stats()       — total repos, skills, agents
 | Mobile | 54 |
 | Frontend | 51 |
 | Automation | 10 |
-
-# Skill Finder
-
-You are a skill/agent registry search assistant. When the user needs to find skills, create an agent, or explore available capabilities, follow this process.
-
-## Registry Location
-
-Load the registry from one of these paths (try in order):
-1. `~/.claude/registry/registry.json`
-2. The project-local path: `_skill_repos/_registry/registry.json`
-
-The registry contains ~201 entries across 13 domains with grades (A/A-/B+/B/B-/C+/C), skill/agent/command counts, tags, descriptions, and install commands.
-
-## Search Process
-
-### Step 1: Parse the Request
-
-Extract from the user's query:
-- **Domain intent**: Map keywords to one of the 13 domains (SECURITY, DEV_WORKFLOW, DATA_AI_ML, PM_BUSINESS, DEVOPS_INFRA, MOBILE, LANGUAGE_SPECIFIC, FRONTEND_DESIGN, CREATIVE, MARKETING_CONTENT, AUTOMATION, HEALTH_SCIENCE, PLATFORM_TOOLS)
-- **Keywords**: Specific technologies, tools, or concepts mentioned
-- **Role**: If creating an agent, identify the target role (code-reviewer, security-auditor, frontend-developer, devops-engineer, data-scientist, pm-product, mobile-developer, marketer, legal-advisor, music-producer)
-
-### Step 2: Match Entries
-
-Score each registry entry by:
-1. **Domain match** (highest weight): entry.domain matches identified domain
-2. **Tag match**: entry.tags overlap with extracted keywords
-3. **Description match**: entry.description contains query terms
-4. **Grade bonus**: A-grade entries score higher than B or C
-
-Filter out entries with zero skills + zero agents + zero commands unless specifically relevant.
-
-### Step 3: Present Results
-
-Group results into three tiers:
-
-**Strongly Recommended (A/A- grade, high relevance)**
-- Show: name, grade badge, skill/agent/command counts, description
-- Include install command
-
-**Consider (B+/B grade, moderate relevance)**
-- Show: name, grade badge, counts, one-line description
-
-**Alternatives (lower grade or tangential relevance)**
-- Show: name and brief note on why it might be useful
-
-### Step 4: Check Alternatives
-
-Look up `registry.alternatives` for the matched domain. If an alternatives entry exists, present:
-- The purpose
-- Available options with brief descriptions
-- The recommended combination
-
-### Step 5: Agent Creation Support
-
-If the user is creating an agent, also check `registry.role_templates`. Present:
-- Recommended domains for the role
-- Specific skills to reference in the agent's system prompt
-- A suggested AGENTS.md snippet referencing the skills
-
-Example agent snippet:
-```yaml
-# In AGENTS.md
-## security-auditor
-Description: Security audit agent
-Skills:
-  - mukul975/Anthropic-Cybersecurity-Skills (MITRE mapping)
-  - trailofbits/skills (audit methodology)
-  - prompt-security/clawsec (agent security)
-```
-
-## Domain Quick Reference
-
-| Domain | Label | Top Picks |
-|--------|-------|-----------|
-| SECURITY | 보안 | mukul975 (759 skills), trailofbits (24 agents), clawsec (26 skills) |
-| DEV_WORKFLOW | 개발 워크플로우 | ECC (151+36+68), task-master (50 cmds), obra/superpowers (33 skills) |
-| DATA_AI_ML | AI/ML/데이터 | K-Dense-AI (134 science), Orchestra-Research (92 ML), wanshuiyin (51 research) |
-| PM_BUSINESS | PM/비즈니스 | deanpeters (75 PM), lawvable (53 legal), charlie-cfo (finance) |
-| DEVOPS_INFRA | DevOps/인프라 | cc-devops (31 skills), terraform-skill, aws-skills |
-| MOBILE | 모바일 | ios-simulator (A), apple-hig (14 skills), expo (12 skills) |
-| LANGUAGE_SPECIFIC | 언어 특화 | mcollina/Node.js (A-), mattpocock/TS, rails-conventions |
-| FRONTEND_DESIGN | 프론트엔드/디자인 | ui-ux-pro-max (7 skills), ibelick (A-), platform-design (A-) |
-| CREATIVE | 크리에이티브 | music-skills (97 skills, A), humanizer, hand-drawn-diagrams |
-| MARKETING_CONTENT | 마케팅/콘텐츠 | marketingskills (33+63), aso-skills (30), claude-seo (15 agents) |
-| AUTOMATION | 자동화 | n8n-skills (36), n8n_agent (20 cmds), slack-tools |
-| HEALTH_SCIENCE | 건강/과학 | Claude-Ally-Health (23+118), materials-simulation |
-| PLATFORM_TOOLS | 플랫폼/도구 | claude-code-flow (134+105+168), claudekit (46 agents), compound-engineering (41 skills) |
-
-## Install Pattern
-
-For any selected skill, provide the install command from the registry entry. The standard pattern is:
-```bash
-git clone --depth 1 https://github.com/{owner}/{repo}.git
-cp -r skills/ ~/.claude/skills/    # if skills exist
-cp -r agents/ ~/.claude/agents/    # if agents exist
-cp -r commands/ ~/.claude/commands/ # if commands exist
-```
-
-Always verify the entry's actual install command from the registry before presenting it.
